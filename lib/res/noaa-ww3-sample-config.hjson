@@ -1,0 +1,17 @@
+{
+    #
+    # Raster config file
+    #
+    # Importer config
+    deleteFinishedFiles: false
+
+    # Clipping boundaries
+    limits:{
+        w:-130.0, e:-20.0,
+        s:-75.0, n:30.0
+    }
+
+    variables:{
+        
+    }
+}
