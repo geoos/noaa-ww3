@@ -1,17 +1,222 @@
 {
+    dataSet: {type: "raster", format:"grib2"}
     #
     # Raster config file
     #
     # Importer config
+    # Fnished files can be deleted or moved to /home/data/finished
     deleteFinishedFiles: false
 
+    # Temporality associaed to each imported file. 
+    # All time values in dataSets are UTC
+    # Depending on temporality, imported files must follow a name rule to incorporate the date and time
+    # 1,2,3,4,6,12 hours: ${dataSet-code}_YYYY-MM-DD_HH-mm
+    # 1 day: ${dataSet-code}_YYYY-MM-DD
+    # 1 month ${dataSet-code}_YYYY-MM
+    # 1 year ${dataSet-code}_YYYY
+    # none (non temporary data): ${dataSet-code}
+    # fixed (fixed-period): TODO
+    temporality:{
+        value: 1, unit:hours
+        # How to interpret mark time in file: start / middle / end of period.
+        # Used to pick a file for timed queries
+        searchCriteria: middle
+    }
+
     # Clipping boundaries
-    limits:{
+    clippingArea:{
         w:-130.0, e:-20.0,
         s:-75.0, n:30.0
     }
 
+    #Grid Query Config
+    grid:{
+        maxWidth:   150
+        maxHeight:  150
+        # gdal_translate resamplig algorithm
+        # nearest (default),bilinear,cubic,cubicspline,lanczos,average,mode
+        resampling: nearest 
+    }
+    #VectorsGrid Query Config
+    vectorsGrid:{
+        maxWidth:   60
+        maxHeight:  60
+        # gdal_translate resamplig algorithm
+        # nearest (default),bilinear,cubic,cubicspline,lanczos,average,mode
+        resampling: bilinear 
+    }
+    #Contour Query Config
+    contour:{
+        maxWidth:   150
+        maxHeight:  150
+        # gdal_translate resamplig algorithm
+        # nearest (default),bilinear,cubic,cubicspline,lanczos,average,mode
+        resampling: nearest 
+    }
+
+    # Apply to All Variables in dataSet
+    # can be extended in variables definition
+    variablesDefaults:{
+        # How many periods (value, unit) should be used to search (before and ahead) if no file is found for specific time
+        searchTolerance: 0
+        options:{
+            decimals:2
+        }
+    }
+
     variables:{
-        
+        # Combined
+        HTSGW: {
+            selector:{GRIB_ELEMENT:"HTSGW"}
+            name: Significant Height of Combined Wind Waves and Swell
+            unit: m
+        }
+        # Wind
+        UGRD: {
+            selector:{GRIB_ELEMENT:"UGRD"}
+            name: U-Component of Wind Speed
+            unit: m/s
+            options:{hidden:true}
+        }
+        VGRD: {
+            selector:{GRIB_ELEMENT:"VGRD"}
+            name: V-Component of Wind Speed
+            unit: m/s
+            options:{hidden:true}
+        }
+        WIND: {
+            selector:{GRIB_ELEMENT:"WIND"}
+            name: Wind Speed (Ground or Water Surface)
+            unit: m/s
+            vector:{uComponent:"UGRD", vComponent:"VGRD"}
+        }
+        WDIR: {
+            selector:{GRIB_ELEMENT:"WDIR"}
+            name: Wind Direction
+            unit: Degree true
+            options:{hidden:true}
+        }
+        WVHGT: {
+            selector:{GRIB_ELEMENT:"WVHGT"}
+            name: Significant Height of Wind Waves
+            unit: m
+            vector:{uComponent:"WVHGT_U", vComponent:"WVHGT_V"}
+        }
+        # http://tornado.sfsu.edu/geosciences/classes/m430/Wind/WindDirection.html
+        WVHGT_U: {
+            calculated:{
+                D: WDIR
+                M: WVHGT
+                formula: "-M * sin(pi / 180 * D)"
+            }
+            name: U - Significant Height of Wind Waves
+            unit: m
+            options:{hidden:true}
+        }
+        WVHGT_V: {
+            calculated:{
+                D: WDIR
+                M: WVHGT
+                formula: "-M * cos(pi / 180 * D)"
+            }
+            name: V - Significant Height of Wind Waves
+            unit: m
+            options:{hidden:true}
+        }
+        WVPER: {
+            selector:{GRIB_ELEMENT:"WVPER"}
+            name: Mean period of wind waves
+            unit: s
+        }
+
+        # Primary Waves
+        PERPW: {
+            selector:{GRIB_ELEMENT:"PERPW"}
+            name: Primary Wave Mean Period 
+            unit: s
+        }
+        DIRPW: {
+            selector:{GRIB_ELEMENT:"DIRPW"}
+            name: Primary Wave Direction
+            unit: Degree true
+        }
+
+        # Swell 1
+        SWELL1: {
+            selector:{GRIB_ELEMENT:"SWELL", GRIB_SHORT_NAME:"1-RESERVED(241)"}
+            name: Significant Height of Swell-1 Waves
+            unit: m
+            vector:{uComponent:"SWELL1_U", vComponent:"SWELL1_V"}
+        }
+        SWPER1: {
+            selector:{GRIB_ELEMENT:"SWPER", GRIB_SHORT_NAME:"1-RESERVED(241)"}
+            name: Mean Period of Swell-1 Waves
+            unit: s
+        }
+        SWDIR1: {
+            selector:{GRIB_ELEMENT:"SWDIR", GRIB_SHORT_NAME:"1-RESERVED(241)"}
+            name: Direction of Swell-1 Waves
+            unit: Degrees true
+            options:{hidden:true}
+        }
+        SWELL1_U: {
+            calculated:{
+                D: SWDIR1
+                M: SWELL1
+                formula: "-M * sin(pi / 180 * D)"
+            }
+            name: U - Significant Height of Swell-1 Waves
+            unit: m
+            options:{hidden:true}
+        }
+        SWELL1_V: {
+            calculated:{
+                D: SWDIR1
+                M: SWELL1
+                formula: "-M * cos(pi / 180 * D)"
+            }
+            name: V - Significant Height of Swell-1 Waves
+            unit: m
+            options:{hidden:true}
+        }
+
+        # Swell 2
+        SWELL2: {
+            selector:{GRIB_ELEMENT:"SWELL", GRIB_SHORT_NAME:"2-RESERVED(241)"}
+            name: Significant Height of Swell-2 Waves
+            unit: m
+            vector:{uComponent:"SWELL2_U", vComponent:"SWELL2_V"}
+        }
+        SWPER2: {
+            selector:{GRIB_ELEMENT:"SWPER", GRIB_SHORT_NAME:"2-RESERVED(241)"}
+            name: Mean Period of Swell-2 Waves
+            unit: s
+        }
+        SWDIR2: {
+            selector:{GRIB_ELEMENT:"SWDIR", GRIB_SHORT_NAME:"2-RESERVED(241)"}
+            name: Direction of Swell-2 Waves
+            unit: Degrees true
+            options:{hidden:true}
+        }
+        SWELL2_U: {
+            calculated:{
+                D: SWDIR2
+                M: SWELL2
+                formula: "-M * sin(pi / 180 * D)"
+            }
+            name: U - Significant Height of Swell-2 Waves
+            unit: m
+            options:{hidden:true}
+        }
+        SWELL2_V: {
+            calculated:{
+                D: SWDIR2
+                M: SWELL2
+                formula: "-M * cos(pi / 180 * D)"
+            }
+            name: V - Significant Height of Swell-2 Waves
+            unit: m
+            options:{hidden:true}
+        }
     }
 }
